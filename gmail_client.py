@@ -10,13 +10,6 @@ from email.mime.text import MIMEText
 import base64
 
 
-try:
-    import argparse
-    flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
-except ImportError:
-    flags = None
-
-
 
 class GmailMyself:
 
@@ -48,10 +41,7 @@ class GmailMyself:
         if not credentials or credentials.invalid:
             flow = client.flow_from_clientsecrets(self.CLIENT_SECRET_FILE, self.SCOPES)
             flow.user_agent = APPLICATION_NAME
-            if flags:
-                credentials = tools.run_flow(flow, store, flags) 
-            else: # Needed only for compatibility with Python 2.6
-                credentials = tools.run(flow, store)
+            credentials = tools.run_flow(flow, store) 
 
         return credentials
 
@@ -64,11 +54,13 @@ class GmailMyself:
 
     def send(self, subject, message):
         message = MIMEText(message)
-        message.update({'to': self.mail, 'from': self.mail, 'subject': subject})
-        message = {'raw': base64.urlsafe_b64encode(message.as_string())}
+        message['to'] = self.mail 
+        message['from'] = self.mail
+        message['subject'] = subject
+        body = {'raw': base64.urlsafe_b64encode(message.as_string())}
 
         try:
-            self.service.users().messages().send(userId=self.mail, body=message)\
+            self.service.users().messages().send(userId=self.mail, body=body)\
                    .execute()
         except errors.HttpError, error:
             print('An error occurred: %s' % error)

@@ -5,7 +5,6 @@ from bs4 import BeautifulSoup
 from gmail_client import GmailMyself
 import collections
 import urllib
-import re
 import os
 import datetime
 import os.path
@@ -39,17 +38,13 @@ def cache_page(func):
 def bolsa_checker(bolsa_page):
 
     tag_to_str = lambda s: (s.string or '').encode('utf-8', errors='ignore')
-    remove_non_alpha = lambda s: re.sub('\W', '', s)
-    
+
+    header_fields = ["vagas", "tipo", "responsavel", "edital",\
+                    "area", "abertura", "prazo"]
+    Table = collections.namedtuple('Table', header_fields)
 
     soup = BeautifulSoup(bolsa_page, 'html.parser')
     article = soup.find('article')
-
-    table_head = map(remove_non_alpha,\
-                    map(tag_to_str,\
-                        article.find('thead').find_all('th')))
-
-    Table = collections.namedtuple('Table', table_head)
 
     scholarships = []
     for row in article.find('tbody').find_all("tr"):
@@ -60,19 +55,20 @@ def bolsa_checker(bolsa_page):
 
 if __name__ == '__main__':
 
-    telecom_ss = lambda s : "telecomunicações" in s.reaProjeto.lower()
+    targets = ["telecomunicações", "gestão", "informática"]
+    #lower doesn't work with non ascii characters
+    area_ss = lambda ss :  any(area in ss.area.lower() for area in targets)
 
-    user = "pbraz.93@gmail.com"
     title = "[Bolsa Checker] Found a scholarship for you!!"
 
+    my_mail = GmailMyself("pbraz.93@gmail.com")
 
-    my_mail = GmailMyself(user)
     scholarships = bolsa_checker()
-    telecom_scholarships = filter(telecom_ss, scholarships) if scholarships else None
+    telecom_scholarships = filter(area_ss, scholarships) if scholarships else None
 
 
     if telecom_scholarships:
-        body = "\n".join(["{} -> {}".format(ss.Tipodebolsa, ss.reaProjeto)\
+        body = "\n".join(["{} -> {}".format(ss.tipo, ss.area)\
                                         for ss in telecom_scholarships])
         my_mail.send(title, body)
 
