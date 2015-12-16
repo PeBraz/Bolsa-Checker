@@ -8,6 +8,13 @@ import urllib
 import os
 import datetime
 import os.path
+import sys
+
+BOLSACHECKER_USER = "BOLSACHECKER_USER"
+if  not os.environ.has_key(BOLSACHECKER_USER):
+    print "Set email account first (e.g.:~ env {}=<your-email> python bolsa_checker.py)"\
+            .format(BOLSACHECKER_USER)
+    sys.exit()
 
 def cache_page(func):
     BOLSAS_PAGE = "http://drh.tecnico.ulisboa.pt/bolseiros/recrutamento/"
@@ -61,7 +68,7 @@ if __name__ == '__main__':
 
     title = "[Bolsa Checker] Found a scholarship for you!!"
 
-    my_mail = GmailMyself("pbraz.93@gmail.com")
+    my_mail = GmailMyself(os.environ[BOLSACHECKER_USER])
 
     scholarships = bolsa_checker()
     telecom_scholarships = filter(area_ss, scholarships) if scholarships else None
